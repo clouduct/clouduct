@@ -40,8 +40,7 @@ class SelectOneWithHelp(npyscreen.SelectOne):  # noqa: D101
         If the widget is not available (because the terminal is width to small: do nothing)
         """
         if self.values_with_help:
-            self.parent.set_help(self.helpText + "\n\n" +
-                                 self.values_with_help[self.cursor_line]["desc"])
+            self.parent.set_help(self.helpText + "\n\n" + self.values_with_help[self.cursor_line]["desc"])
         else:
             self.parent.set_help(self.helpText)
 

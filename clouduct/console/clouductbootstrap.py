@@ -4,7 +4,6 @@
 
 import urllib.request
 
-import git
 import boto3
 import click
 import click_completion
@@ -70,7 +69,6 @@ def create(project_name, profile, templates_config=TEMPLATES_CONFIG, template_ke
                 template = templates.get(template_key)
             elif template_key is None and len(templates.keys()) == 1:
                 (template_key, template), = templates.items()
-
 
     clouduct.generate(project_name, profile, template, tags, "dev")
 

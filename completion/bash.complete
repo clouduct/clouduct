@@ -1,10 +1,9 @@
-
-_clouduct_completion() {
+_clouduct-bootstrap_completion() {
     local IFS=$'\t'
     COMPREPLY=( $( env COMP_WORDS="${COMP_WORDS[*]}" \
                    COMP_CWORD=$COMP_CWORD \
-                   _CLOUDUCT_COMPLETE=complete-bash $1 ) )
+                   _CLOUDUCT_BOOTSTRAP_COMPLETE=complete-bash $1 ) )
     return 0
 }
 
-complete -F _clouduct_completion -o default clouduct
+complete -F _clouduct-bootstrap_completion -o default clouduct-bootstrap

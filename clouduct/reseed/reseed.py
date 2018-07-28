@@ -37,7 +37,7 @@ class SimpleLineReplacer:
 
 class Reseed:
 
-    def __init__(self, src_dir, target_dir=None, config_file=None, input = {}, force=False):
+    def __init__(self, src_dir, target_dir=None, config_file=None, input={}, force=False):
         self.src_dir = src_dir
         self.input = input
         self.target_dir = target_dir
@@ -60,7 +60,8 @@ class Reseed:
 
                 self.replacers.append(SimpleLineReplacer(old_value, new_value))
                 if name == 'package':
-                    self.dir_replacer = SimpleLineReplacer(old_value.replace('.', os.sep), new_value.replace('.', os.sep))
+                    self.dir_replacer = SimpleLineReplacer(old_value.replace('.', os.sep),
+                                                           new_value.replace('.', os.sep))
                 if self.target_dir is None and name == 'artifactid':
                     self.target_dir = os.path.join("..", new_value)
 
@@ -127,7 +128,7 @@ class Reseed:
         shutil.copytree(".", self.target_dir, copy_function=self.copy_func(), ignore=self.ignore_func())
 
 
-def reseed(src_dir, input = {}, target_dir=None, config_file=None, force=False):
+def reseed(src_dir, input={}, target_dir=None, config_file=None, force=False):
     Reseed(src_dir, target_dir, config_file, input).reseed()
 
 

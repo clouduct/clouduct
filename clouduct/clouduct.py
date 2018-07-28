@@ -7,10 +7,11 @@
 """."""
 
 import git
+
 import clouduct.reseed
 
 
-def generate(project_name, profile, template, tags, env, execute = False):
+def generate(project_name, profile, template, tags, env, execute=False):
     """Generate a new project in AWS."""
 
     print("cloning {}".format(template["application"]))

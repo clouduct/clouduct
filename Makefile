@@ -7,15 +7,17 @@ completion_files := $(foreach shell_name, ${SUPPORTED_SHELLS}, completion/${shel
 .PHONY: dist completion prepare-dist clean lint
 
 # create a shell completion file for a given shell (see SUPPORTED_SHELLS)
-completion/%.complete: bin/clouduct completion/
-	PATH=$$PWD/bin:$$PATH _CLOUDUCT_COMPLETE=source-$* clouduct  > $@
+completion/%.complete: completion/
+	_CLOUDUCT_BOOTSTRAP_COMPLETE=source-$* clouduct-bootstrap  > $@
 
 clean:
 	rm -rf completion
 	rm -rf dist
+	rm -rf .eggs
+	rm -rf .cloduct-info
 
 dist: clean prepare-dist
-	python setup.py sdist
+	poetry build
 
 lint:
 	flake8 clouduct

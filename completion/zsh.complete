@@ -1,9 +1,8 @@
-
-#compdef clouduct
-_clouduct() {
-  eval $(env COMMANDLINE="${words[1,$CURRENT]}" _CLOUDUCT_COMPLETE=complete-zsh  clouduct)
+#compdef clouduct-bootstrap
+_clouduct-bootstrap() {
+  eval $(env COMMANDLINE="${words[1,$CURRENT]}" _CLOUDUCT_BOOTSTRAP_COMPLETE=complete-zsh  clouduct-bootstrap)
 }
-if [[ "$(basename ${(%):-%x})" != "_clouduct" ]]; then
+if [[ "$(basename ${(%):-%x})" != "_clouduct-bootstrap" ]]; then
   autoload -U compinit && compinit
-  compdef _clouduct clouduct
+  compdef _clouduct-bootstrap clouduct-bootstrap
 fi
