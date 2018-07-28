@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "clouduct"
+version = "0.1.0"
+description = "Bootstrap for Clouduct projects"
+authors = ["Victor Volle <victor.volle@beta-thoughts.org>"]
+license = "MPL-2.0"
+
+[tool.poetry.scripts]
+clouduct-bootstrap = 'clouduct.console:main'
+
+[tool.poetry.dependencies]
+boto3 = "^1.7"
+npyscreen = "^4.10"
+click = "^6.7"
+click-completion = "^0.3.1"
+GitPython = "^2.1"
+pathspec = "^0.5.6"
+pyyaml = "^3.13"
+cookiecutter = "^1.6"
+
+[tool.poetry.dev-dependencies]
+setuptools = "^40.0"
+flake8 = "^3.5"

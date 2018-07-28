@@ -6,12 +6,12 @@
 
 """TextUI for clouduct."""
 
-import boto3
-import npyscreen
+import itertools
 import os
 import textwrap
-import itertools
 
+import boto3
+import npyscreen
 
 HELP_WIDTH = 40
 
@@ -114,6 +114,7 @@ def aws_function(*args):
     profile_form = AwsProfileForm(os.environ['AWS_PROFILE'], profiles)
     profile_form.edit()
     return profiles[profile_form.profile.value[0]]
+
 
 values1 = [{"key": "rest-spring-beanstalk",
             "desc": "Web Service using Spring Boot on Elastic Beanstalk"},

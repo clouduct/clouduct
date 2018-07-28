@@ -7,7 +7,7 @@ import click
 import click_completion
 import clouduct
 
-click_completion.init()
+click_completion.init(complete_options=True)
 
 
 profiles = boto3.session.Session().available_profiles

@@ -6,10 +6,16 @@
 
 """."""
 
+import git
+import clouduct.reseed
 
-def generate(name, profile, template, tags, env, execute):
+
+def generate(project_name, profile, template, tags, env, execute = False):
     """Generate a new project in AWS."""
-    # retrieve the template
+
+    print("cloning {}".format(template["application"]))
+    git.Repo.clone_from(template["application"], ".clouduct-seed", depth=1)
+    clouduct.reseed(".clouduct-seed", input={"project_name": project_name})
 
     # replace placeholders
 

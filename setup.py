@@ -1,43 +1,38 @@
-from setuptools import setup, find_packages
+# -*- coding: utf-8 -*-
+from distutils.core import setup
 
-setup(name='clouduct',
-      version='0.1',
-      description='Create AWS setups for common use cases',
-      url='https://github.com/kontrafiktion/clouduct',
-      author='Victor Volle',
-      author_email='victor.volle@beta-thoughts.org',
-      license='MIT',
-      packages=find_packages(),
-      include_package_data=True,
-      # test_suite='pytest.collector',
-      scripts=['bin/clouduct'],
-      setup_requires=['pytest-runner'],
-      tests_require=['pytest'],
-      python_requires='>=3.4.1',
-      install_requires=[
-        'boto3==1.5.18',
-        'cookiecutter==1.6.0',
-        'npyscreen==4.10.5',
-        'click==6.7',
-        'click-completion==0.2.1'
-      ],
-      classifiers=[
-        'Development Status :: 1 - Planning',
-        'Environment :: Console',
+packages = \
+['clouduct', 'clouduct.console', 'clouduct.cookicutter']
 
-        # Indicate who your project is intended for
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
+package_data = \
+{'': ['*'], 'clouduct': ['reseed/*']}
 
-        'Topic :: Software Development :: Code Generators',
-        'Topic :: System :: Systems Administration',
+install_requires = \
+['GitPython>=2.1,<3.0',
+ 'boto3>=1.7,<2.0',
+ 'click-completion>=0.3.1,<0.4.0',
+ 'click>=6.7,<7.0',
+ 'cookiecutter>=1.6,<2.0',
+ 'npyscreen>=4.10,<5.0',
+ 'pathspec>=0.5.6,<0.6.0',
+ 'pyyaml>=3.13,<4.0']
 
-        'License :: OSI Approved :: MIT License',
+entry_points = \
+{'console_scripts': ['clouduct-bootstrap = clouduct.console:main']}
 
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Unix',
+setup_kwargs = {
+    'name': 'clouduct',
+    'version': '0.1.0',
+    'description': 'Bootstrap for Clouduct projects',
+    'long_description': None,
+    'author': 'Victor Volle',
+    'author_email': 'victor.volle@beta-thoughts.org',
+    'url': None,
+    'packages': packages,
+    'package_data': package_data,
+    'install_requires': install_requires,
+    'entry_points': entry_points,
+}
 
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-    ])
+
+setup(**setup_kwargs)

@@ -18,7 +18,7 @@ dist: clean prepare-dist
 	python setup.py sdist
 
 lint:
-	flake8 clouduct bin/clouduct
+	flake8 clouduct
 
 prepare-dist:  completion/ ${completion_files} lint
 
