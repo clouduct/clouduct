@@ -4,7 +4,7 @@ completion_files := $(foreach shell_name, ${SUPPORTED_SHELLS}, completion/${shel
 
 
 
-.PHONY: dist completion prepare-dist clean lint
+.PHONY: dist completion prepare-dist clean lint init
 
 # create a shell completion file for a given shell (see SUPPORTED_SHELLS)
 completion/%.complete: completion/
@@ -26,3 +26,7 @@ prepare-dist:  completion/ ${completion_files} lint
 
 completion/:
 	mkdir completion
+
+init:
+	poetry install
+	poetry develop

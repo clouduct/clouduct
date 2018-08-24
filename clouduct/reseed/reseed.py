@@ -124,8 +124,10 @@ class Reseed:
 
     def reseed(self):
         print(self.src_dir, "=>", self.target_dir)
+        current_dir = os.path.realpath(os.path.curdir)
         os.chdir(self.src_dir)
         shutil.copytree(".", self.target_dir, copy_function=self.copy_func(), ignore=self.ignore_func())
+        os.chdir(current_dir)
 
 
 def reseed(src_dir, input={}, target_dir=None, config_file=None, force=False):

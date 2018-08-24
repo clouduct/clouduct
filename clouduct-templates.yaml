@@ -7,6 +7,5 @@ kotlin-rest-spring-boot:
   tags: ["Kotlin", "Spring Boot", "Beanstalk"]
   description: >
     Spring Boot REST service using Kotlin
-  application: /Users/vivo/workspaces/me/clouduct/clouduct-seed1
-  # https://github.com/clouduct/clouduct-seed1.git
-  infrastructure: https://github.com/clouduct/terraform-template.git
+  application: ../clouduct-seed1 # https://github.com/clouduct/clouduct-seed1.git
+  infrastructure: ../terraform-template # https://github.com/clouduct/terraform-template.git

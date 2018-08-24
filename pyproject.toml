@@ -1,23 +1,27 @@
 [tool.poetry]
 name = "clouduct"
-version = "0.1.0"
+version = "0.0.2"
 description = "Bootstrap for Clouduct projects"
 authors = ["Victor Volle <victor.volle@beta-thoughts.org>"]
 license = "MPL-2.0"
+include = ["clouduct-bin/*"]
 
 [tool.poetry.scripts]
 clouduct-bootstrap = 'clouduct.console:main'
 
 [tool.poetry.dependencies]
+python = "^3.6"
 boto3 = "^1.7"
 npyscreen = "^4.10"
 click = "^6.7"
-click-completion = "^0.3.1"
 GitPython = "^2.1"
 pathspec = "^0.5.6"
 pyyaml = "^3.13"
 cookiecutter = "^1.6"
+# click-completion = "^0.4.1" # https://github.com/click-contrib/click-completion/pull/14
+click-completion = {git = "https://github.com/click-contrib/click-completion.git", rev = "0eab3ed9"}
 
 [tool.poetry.dev-dependencies]
 setuptools = "^40.0"
-flake8 = "^3.5"
+#flake8 = "^3.5" https://github.com/PyCQA/pycodestyle/issues/728
+flake8 = { git = "https://gitlab.com/pycqa/flake8", rev = "9631dac5" }

@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+
+set -e
+
+
+ALL_PHASES="global network storage compute build"
+ALL_ENVS="dev test int prod"
+
+DEFAULT_ENVIRONMENT=dev
+DEFAULT_COMMAND=plan
+
+DRY_RUN=false
+
+# colour warnings and errors?
+if [ -t 1 ]; then
+  COLOR_WARN='\E[1;31m'
+  COLOR_INFO='\E[0;34m'
+  NO_COLOR='\E[0m'
+else
+  COLOR_WARN=''
+  COLOR_INFO=''
+  NO_COLOR=''
+fi
+
+# --------------------------------------------------------------------------------------------------
+# PREPARE
+# --------------------------------------------------------------------------------------------------
+
+CLOUDUCT_CONFIG_FILE=".clouduct-tf"
+
+# ensure we're executing in the correct directory
+SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
+cd "${SCRIPT_DIR}"
+
+BASENAME=$(basename "$0")
+
+# check for existence of config file
+if [ -e "$CLOUDUCT_CONFIG_FILE" ]; then
+  # shellcheck source=.clouduct-tf
+  source "${CLOUDUCT_CONFIG_FILE}"
+else
+  echo "Could not find configuration file ${CLOUDUCT_CONFIG_FILE}"
+  exit 1
+fi
+
+if [[ -z $TF_VAR_project_name ]]; then
+  echo "missing environment variable TF_VAR_project_name"
+  echo "should have been set in $CLOUDUCT_CONFIG_FILE"
+  exit 1
+fi
+export TF_VAR_project_name
+
+if [[ -z $TF_VAR_region ]]; then
+  echo "missing environment variable TF_VAR_region"
+  echo "should have been set in $CLOUDUCT_CONFIG_FILE"
+  exit 1
+fi
+
+usage() {
+  local ALL_PHASES_ALT="${ALL_PHASES// /|}"
+  local ALL_ENVS_ALT="${ALL_ENVS// /|}"
+  echo "Usage:"
+  echo "  ${BASENAME} [command] [env] [phase]"
+  echo "  "
+  echo "     command       plan|apply|destroy ('bootstrap' can only be called once) -- default: plan"
+  echo "     env           ${ALL_ENVS_ALT} -- default: dev"
+  echo "     phase         ${ALL_PHASES_ALT} -- if omitted all phases will be executed"
+  echo "  "
+}
+
+# trims leading and trailing spaces of the given string
+trim() {
+  echo "$*" | sed -e 's/ $//' -e 's/^ //'
+}
+
+# checks whether the first argument (a word) is in the list of words given as second argument
+# (the list of words must be quoted)
+contains() {
+  local item="$1"
+  local list="$2"
+
+  if [[ " $list " = *" $item "* ]]; then
+  # if [[ " $list " =~ " $item " ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# reverses a list of words given as parameters
+reverse() {
+  for (( i = ${#*}; i > 0; i-- ))
+  {
+    echo ${!i}
+  }
+}
+
+info() {
+  echo -e "${COLOR_INFO}$1${NO_COLOR}"
+}
+warn() {
+  echo -e "${COLOR_WARN}$1${NO_COLOR}"
+}
+
+
+# --------------------------------------------------------------------------------------------------
+# ARGUMENT HANDLING
+# --------------------------------------------------------------------------------------------------
+
+if [[ "$1" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+if [[ "$1" == '-n' ]]; then
+  DRY_RUN=true
+  shift
+fi
+
+if contains "$1" "bootstrap plan apply destroy"; then
+  command="$1"
+  shift
+fi
+command=${command:-${DEFAULT_COMMAND}}
+
+
+if contains "$1" "$ALL_ENVS" ; then
+  TF_VAR_environment="$1"
+  shift
+fi
+TF_VAR_environment=${TF_VAR_environment:-$DEFAULT_ENVIRONMENT}
+
+while contains "$1" "$ALL_PHASES"; do
+  PHASES="$1 $PHASES"
+  shift
+done
+
+if [[ "${PHASES}" = "" ]]; then
+  PHASES_IN_EXEC_ORDER=$ALL_PHASES
+else
+  # ensure the phases are in the correct order
+
+  PHASES=$(echo "$PHASES" | sed -e 's/ $//g' -e 's/ /\|/g')
+  for phase in $ALL_PHASES; do
+    if [[ $phase =~ .*${PHASES}.* ]]; then
+      PHASES_IN_EXEC_ORDER="$PHASES_IN_EXEC_ORDER $phase"
+    fi
+  done
+fi
+PHASES_IN_EXEC_ORDER=$(trim "$PHASES_IN_EXEC_ORDER")
+
+if [[ $# -gt 0 ]]; then
+  echo "unknown parameter(s) $*"
+  echo
+  usage
+  exit 1
+fi
+
+
+# --------------------------------------------------------------------------------------------------
+# EXECUTE
+# --------------------------------------------------------------------------------------------------
+
+if [[ "$DRY_RUN" = "true" ]]; then
+  echo "CLOUDUCT DEBUG: DRY RUN only (for script debugging)"
+fi
+
+export TF_VAR_bucket="${TF_VAR_project_name}-clouduct-terraform"
+
+INFRA_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+TF_PLUGIN_CACHE_DIR=${INFRA_DIR}/.terraform.d/plugin_cache
+
+if [[ $command == "bootstrap" ]]; then
+
+  mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+
+  pushd "${INFRA_DIR}/bootstrap" > /dev/null
+
+  if [[ ! "$DRY_RUN" = "true" ]]; then
+    terraform init -reconfigure
+    terraform apply
+  fi
+
+  popd > /dev/null
+
+else
+
+  info "CLOUDUCT INFO: project: $TF_VAR_project_name  --  env: ($TF_VAR_environment)  --  phases: ($PHASES_IN_EXEC_ORDER) command: ($command)"
+
+  PHASE_COUNT=0
+
+  if [[ $command == "destroy" ]]; then
+    PHASES_IN_EXEC_ORDER=$(reverse $PHASES_IN_EXEC_ORDER)
+  fi
+
+  for phase in ${PHASES_IN_EXEC_ORDER}; do
+    # echo "${INFRA_DIR}/$phase"
+    PHASE_COUNT=$(( PHASE_COUNT + 1 ))
+
+    if (( PHASE_COUNT == 2 )); then
+      if [[ $command = 'plan' ]]; then
+        warn "CLOUDUCT WARN: You are 'plan'-ing multiple phases."
+        warn "               If a later phase depends on a change being applied"
+        warn "               in an earlier phase, it will not have happend."
+        warn "               You need to 'apply' that earlier phase first"
+      fi
+    fi
+
+    pushd "${INFRA_DIR}/$phase" > /dev/null
+
+    if [[ $phase = "global" ]]; then
+      KEY="global"
+    else
+      KEY=${TF_VAR_environment}/${phase}
+    fi
+
+    # echo "CLOUDUCT DEBUG: terraform state: https://s3.${TF_VAR_region}.amazonaws.com/${TF_VAR_bucket}/${KEY}"
+    info "CLOUDUCT INFO: ${KEY}"
+
+    if [[ ! "$DRY_RUN" = "true" ]]; then
+      terraform init -reconfigure \
+        -backend-config="region=${TF_VAR_region}" \
+        -backend-config="bucket=${TF_VAR_bucket}" \
+        -backend-config="key=${KEY}"
+
+      terraform "${command}"
+    fi
+
+    popd > /dev/null
+
+  done
+
+fi
+
+exit 0
+

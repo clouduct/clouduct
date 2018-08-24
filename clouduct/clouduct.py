@@ -7,6 +7,7 @@
 """."""
 
 import git
+import os
 
 import clouduct.reseed
 
@@ -14,11 +15,16 @@ import clouduct.reseed
 def generate(project_name, profile, template, tags, env, execute=False):
     """Generate a new project in AWS."""
 
+    print("CURDIR1:", os.path.realpath(os.path.curdir))
     print("cloning {}".format(template["application"]))
     git.Repo.clone_from(template["application"], ".clouduct-seed", depth=1)
     clouduct.reseed(".clouduct-seed", input={"project_name": project_name})
+    print("CURDIR2:", os.path.realpath(os.path.curdir))
+    git.Repo.clone_from(template["infrastructure"], "{}-infra".format(project_name), depth=1)
 
-    # replace placeholders
+    # clouduct_tf = os.path.join(os.path.dirname(
+    #     os.path.dirname(
+    #         os.path.dirname(os.path.realpath(__file__)))), "clouduct-bin/clouduct-tf")
 
     if execute:
         # execute terraform

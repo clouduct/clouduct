@@ -1,0 +1,8 @@
+#compdef compdummy
+_compdummy() {
+  eval $(env COMMANDLINE="${words[1,$CURRENT]}" _COMPDUMMY_COMPLETE=complete-zsh  compdummy)
+}
+if [[ "$(basename ${(%):-%x})" != "_compdummy" ]]; then
+  autoload -U compinit && compinit
+  compdef _compdummy compdummy
+fi
