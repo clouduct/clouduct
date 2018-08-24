@@ -123,7 +123,7 @@ class Reseed:
         return _ignore_func
 
     def reseed(self):
-        print(self.src_dir, "=>", self.target_dir)
+        print(self.src_dir, "=>", self.target_dir.replace("../", ""))
         current_dir = os.path.realpath(os.path.curdir)
         os.chdir(self.src_dir)
         shutil.copytree(".", self.target_dir, copy_function=self.copy_func(), ignore=self.ignore_func())

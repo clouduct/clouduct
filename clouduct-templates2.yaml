@@ -5,6 +5,7 @@ kotlin-rest-spring-boot-local:
   version: 0.1
   clouduct-version: 1.0
   tags: ["Kotlin", "Spring Boot", "Beanstalk"]
+  available-regions-for: ec2
   description: >
     Spring Boot REST service using Kotlin
   application: ../clouduct-seed1 # https://github.com/clouduct/clouduct-seed1.git
@@ -16,6 +17,7 @@ kotlin-rest-spring-boot:
   version: 0.1
   clouduct-version: 1.0
   tags: ["Kotlin", "Spring Boot", "Beanstalk"]
+  available-regions-for: ec2
   description: >
     Spring Boot REST service using Kotlin
   application: https://github.com/clouduct/clouduct-seed1.git
@@ -27,6 +29,7 @@ java-rest-spring-boot:
   version: 0.1
   clouduct-version: 1.0
   tags: ["Kotlin", "Spring Boot", "Beanstalk"]
+  available-regions-for: ec2
   description: >
     Spring Boot REST service using Kotlin
   application: https://github.com/clouduct/clouduct-seed1.git

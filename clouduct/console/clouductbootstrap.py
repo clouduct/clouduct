@@ -3,6 +3,7 @@
 """Command Line Interface for 'clouduct'."""
 
 import os
+import re
 import sys
 import urllib.request
 
@@ -20,7 +21,9 @@ def click_completion_match_incomplete(choice, incomplete):
 
 click_completion.init(match_incomplete=click_completion_match_incomplete, complete_options=True)
 
-profiles = boto3.session.Session().available_profiles
+session = boto3.session.Session()
+profiles = session.available_profiles
+regions = session.get_available_regions('ec2')
 
 DEFAULT_TEMPLATES_CONFIG = \
     "https://raw.githubusercontent.com/clouduct/clouduct-bootstrap/master/clouduct-templates.yaml"
@@ -29,6 +32,12 @@ DEFAULT_TEMPLATES_CONFIG = \
 
 environments = ["dev", "test", "prod"]
 
+protocol_re = re.compile("(file|http(s?)):.*")
+
+def protocolize(templates_config):
+    if not protocol_re.match(templates_config):
+        return "file:" + templates_config
+    return templates_config
 
 def template_names():
     argx = sys.argv
@@ -47,13 +56,13 @@ def template_names():
     except ValueError:
         templates_config = DEFAULT_TEMPLATES_CONFIG
     try:
-        templates_config = templates_config.strip('\'"')
+        templates_config = protocolize(templates_config.strip('\'"'))
+
         with urllib.request.urlopen(templates_config) as resource:
             templates = yaml.load(resource)
         return list(templates.keys())
         # TODO: Caching
     except ValueError as err:
-        click.echo("HERE", file=sys.stderr, err=True)
         click.echo(err, file=sys.stderr, err=True)
         sys.exit(1)
     except Exception as err:
@@ -67,7 +76,7 @@ def completion():
     pass
 
 
-@completion.command()
+@completion.command(context_settings=dict(max_content_width=120))
 # @click.option('--execute', is_flag=True,
 #               help='clouduct will only show the execution plan unless you give this flag')
 @click.option('--profile', type=click.Choice(profiles),
@@ -76,17 +85,21 @@ def completion():
 @click.option('--template', "template_key", type=click.Choice(template_names()),
               help='The template your new project will be based on'
                    ' (see https://clouduct.org/templates.html)')
-@click.option('--templates-config',
-              help='A URL where that returns a list of templates (either as text or as application/json)')
+@click.option('--templates-config', default=DEFAULT_TEMPLATES_CONFIG,
+              help='A URL that returns a clouduct-templates YAML file (may be "file:" or "http/s:")')
 @click.option('--tag', 'tags', multiple=True, metavar='<key>:<value>',
               help='Tag for the created resources: <key>:<value> (can be provided multiple times)')
+@click.option('--var', 'vars', multiple=True, metavar='<key>=<value>',
+              help='Variables needed by the template: <key>=<value> (can be provided multiple times)')
+@click.option('--region', type=click.Choice(regions), default="eu-central-1",
+              help='The AWS region in which this project shall be created. Default: "eu-central-1"')
 # @click.option('--env', default='dev', type=click.Choice(environments),
 #               help='Default: "dev".\n'
 #                    'The kind of environment you want to create (used for naming and tagging). Some'
 #                    ' templates create different kind/sizes of resources based on this parameter'
 #                    ' (if you are not sure, do not set this param)')
 @click.argument('project_name')
-def create(project_name, profile, templates_config=None, template_key=None, tags={}):
+def create(project_name, profile, templates_config=DEFAULT_TEMPLATES_CONFIG, template_key=None, vars=None, tags=None, region="eu-central-1"):
     """Generate an initial project on AWS based on a template.
 
     The CodeCommit repo will be named NAME and all other resources will contain
@@ -95,8 +108,13 @@ def create(project_name, profile, templates_config=None, template_key=None, tags
     if profile:
         print("profile:", profile)
 
-    if templates_config is None:
-        templates_config = DEFAULT_TEMPLATES_CONFIG
+    seed_config = {}
+    for var_def in vars:
+        key, value = var_def.split("=")
+        seed_config[key] = value
+
+    templates_config = protocolize(templates_config)
+
     with urllib.request.urlopen(templates_config) as resource:
         templates = yaml.load(resource)
 
@@ -114,7 +132,7 @@ def create(project_name, profile, templates_config=None, template_key=None, tags
                 print("template name missing {}. Should be one of {}".format(template_key, list(templates.keys())))
                 sys.exit(1)
 
-    clouduct.generate(project_name, profile, template, tags, "dev")
+    clouduct.generate(project_name, profile, template, tags, "dev", region, seed_config)
 
 
 def verify_prerequisites():

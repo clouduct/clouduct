@@ -8,23 +8,47 @@
 
 import git
 import os
+import shutil
 
 import clouduct.reseed
 
+SEED_DIR = ".clouduct-seed"
+CLOUDUCT_TF_FILE = "clouduct-bin/clouduct-tf"
+INFRA_CONFIG_FILE = ".clouduct-tf"
 
-def generate(project_name, profile, template, tags, env, execute=False):
+def generate(project_name, profile, template, tags, env, region, seed_config = None, execute=False):
     """Generate a new project in AWS."""
 
-    print("CURDIR1:", os.path.realpath(os.path.curdir))
     print("cloning {}".format(template["application"]))
-    git.Repo.clone_from(template["application"], ".clouduct-seed", depth=1)
-    clouduct.reseed(".clouduct-seed", input={"project_name": project_name})
-    print("CURDIR2:", os.path.realpath(os.path.curdir))
-    git.Repo.clone_from(template["infrastructure"], "{}-infra".format(project_name), depth=1)
+    if os.path.exists(SEED_DIR):
+        shutil.rmtree(SEED_DIR)
+    git.Repo.clone_from(template["application"], SEED_DIR, depth=1)
+    if seed_config is None:
+        seed_config = {}
+    seed_config["project_name"] = project_name
+    clouduct.reseed(SEED_DIR, input=seed_config)
+    infra_dir_name = "{}-infra".format(project_name)
+    git.Repo.clone_from(template["infrastructure"], infra_dir_name, depth=1)
 
-    # clouduct_tf = os.path.join(os.path.dirname(
-    #     os.path.dirname(
-    #         os.path.dirname(os.path.realpath(__file__)))), "clouduct-bin/clouduct-tf")
+    # when installed, clouduct-tf should be at ../../clouduct-bin/clouduct-tf relative to _this_ file
+    clouduct_tf_fullpath = os.path.join(os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__)))), CLOUDUCT_TF_FILE)
+
+    # when running locally, clouduct-tf should be at "clouduct-bin/clouduct-tf
+    if not os.path.exists(clouduct_tf_fullpath):
+        clouduct_tf_fullpath = CLOUDUCT_TF_FILE
+    os.chmod(clouduct_tf_fullpath, 0o774)
+    shutil.copy(clouduct_tf_fullpath, infra_dir_name)
+
+    # create terraform config file
+    config = {}
+    config["TF_VAR_project_name"] = project_name
+    config["TF_VAR_region"] = region
+    clouduct_config_file = os.path.join(infra_dir_name, INFRA_CONFIG_FILE)
+    with open(clouduct_config_file, "w") as file:
+        for (key, value) in config.items():
+            print("{}={}".format(key, value), file=file)
 
     if execute:
         # execute terraform
