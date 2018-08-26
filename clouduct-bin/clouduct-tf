@@ -207,27 +207,32 @@ else
       fi
     fi
 
-    pushd "${INFRA_DIR}/$phase" > /dev/null
+    if [[ -d  "${INFRA_DIR}/$phase" ]]; then
 
-    if [[ $phase = "global" ]]; then
-      KEY="global"
+      pushd "${INFRA_DIR}/$phase" > /dev/null
+
+      if [[ $phase = "global" ]]; then
+        KEY="global"
+      else
+        KEY=${TF_VAR_environment}/${phase}
+      fi
+
+      # echo "CLOUDUCT DEBUG: terraform state: https://s3.${TF_VAR_region}.amazonaws.com/${TF_VAR_bucket}/${KEY}"
+      info "CLOUDUCT INFO: ${KEY}"
+
+      if [[ ! "$DRY_RUN" = "true" ]]; then
+        terraform init -reconfigure \
+          -backend-config="region=${TF_VAR_region}" \
+          -backend-config="bucket=${TF_VAR_bucket}" \
+          -backend-config="key=${KEY}"
+
+        terraform "${command}"
+      fi
+
+      popd > /dev/null
     else
-      KEY=${TF_VAR_environment}/${phase}
+      echo "phase $phase not available"
     fi
-
-    # echo "CLOUDUCT DEBUG: terraform state: https://s3.${TF_VAR_region}.amazonaws.com/${TF_VAR_bucket}/${KEY}"
-    info "CLOUDUCT INFO: ${KEY}"
-
-    if [[ ! "$DRY_RUN" = "true" ]]; then
-      terraform init -reconfigure \
-        -backend-config="region=${TF_VAR_region}" \
-        -backend-config="bucket=${TF_VAR_bucket}" \
-        -backend-config="key=${KEY}"
-
-      terraform "${command}"
-    fi
-
-    popd > /dev/null
 
   done
 

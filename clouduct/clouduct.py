@@ -13,11 +13,32 @@ import shutil
 import clouduct.reseed
 
 SEED_DIR = ".clouduct-seed"
+
+
 CLOUDUCT_TF_FILE = "clouduct-bin/clouduct-tf"
+CLOUDUCT_INITIAL_COMMIT_FILE = "clouduct-bin/initial-commit.sh"
+
 INFRA_CONFIG_FILE = ".clouduct-tf"
+
+def copy_bin_file(clouduct_bin_path, target_dir):
+    # when installed, everything in clouduct-bin should be at ../../clouduct-bin/clouduct-tf relative to _this_ file
+    fullpath = os.path.join(os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__)))), clouduct_bin_path)
+
+    # when running locally, everything should just be at "clouduct-bin/clouduct-tf
+    if not os.path.exists(fullpath):
+        fullpath = clouduct_bin_path
+    os.chmod(fullpath, 0o774)
+    shutil.copy(fullpath, target_dir)
+
+
 
 def generate(project_name, profile, template, tags, env, region, seed_config = None, execute=False):
     """Generate a new project in AWS."""
+
+    infra_dir_name = "{}-infra".format(project_name)
+    application_dir_name = project_name
 
     print("cloning {}".format(template["application"]))
     if os.path.exists(SEED_DIR):
@@ -27,19 +48,10 @@ def generate(project_name, profile, template, tags, env, region, seed_config = N
         seed_config = {}
     seed_config["project_name"] = project_name
     clouduct.reseed(SEED_DIR, input=seed_config)
-    infra_dir_name = "{}-infra".format(project_name)
     git.Repo.clone_from(template["infrastructure"], infra_dir_name, depth=1)
 
-    # when installed, clouduct-tf should be at ../../clouduct-bin/clouduct-tf relative to _this_ file
-    clouduct_tf_fullpath = os.path.join(os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.realpath(__file__)))), CLOUDUCT_TF_FILE)
-
-    # when running locally, clouduct-tf should be at "clouduct-bin/clouduct-tf
-    if not os.path.exists(clouduct_tf_fullpath):
-        clouduct_tf_fullpath = CLOUDUCT_TF_FILE
-    os.chmod(clouduct_tf_fullpath, 0o774)
-    shutil.copy(clouduct_tf_fullpath, infra_dir_name)
+    copy_bin_file(CLOUDUCT_TF_FILE, infra_dir_name)
+    copy_bin_file(CLOUDUCT_INITIAL_COMMIT_FILE, application_dir_name)
 
     # create terraform config file
     config = {}

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clouduct"
-version = "0.0.2"
+version = "0.0.3"
 description = "Bootstrap for Clouduct projects"
 authors = ["Victor Volle <victor.volle@beta-thoughts.org>"]
 license = "MPL-2.0"
