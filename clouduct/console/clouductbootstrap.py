@@ -34,12 +34,17 @@ environments = ["dev", "test", "prod"]
 
 protocol_re = re.compile("(file|http(s?)):.*")
 
-def protocolize(templates_config):
-    if not protocol_re.match(templates_config):
-        return "file:" + templates_config
-    return templates_config
+
+def protocolize(file_or_url):
+    """add 'file:' before filename if it does not start with http/s: or file:."""
+    if not protocol_re.match(file_or_url):
+        return "file:" + file_or_url
+    return file_or_url
 
 def template_names():
+    """Extract the names of all templates from the template config file.
+    This is used by the 'click-completion' as well as by 'click'
+    """
     argx = sys.argv
 
     # command line completion
@@ -93,11 +98,6 @@ def completion():
               help='Variables needed by the template: <key>=<value> (can be provided multiple times)')
 @click.option('--region', type=click.Choice(regions), default="eu-central-1",
               help='The AWS region in which this project shall be created. Default: "eu-central-1"')
-# @click.option('--env', default='dev', type=click.Choice(environments),
-#               help='Default: "dev".\n'
-#                    'The kind of environment you want to create (used for naming and tagging). Some'
-#                    ' templates create different kind/sizes of resources based on this parameter'
-#                    ' (if you are not sure, do not set this param)')
 @click.argument('project_name')
 def create(project_name, profile, templates_config=DEFAULT_TEMPLATES_CONFIG, template_key=None, vars=None, tags=None, region="eu-central-1"):
     """Generate an initial project on AWS based on a template.
